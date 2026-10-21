@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+  <h1>Processing History</h1>
+  <p>All past thumbnail generation runs, stored in SQLite.</p>
+</div>
+
+<div class="card">
+  {% if rows|length == 0 %}
+  <p style="color: var(--text-muted);">No runs yet. <a href="{{ url_for('index') }}">Upload a video</a> to get started.</p>
+  {% else %}
+  <table class="compare-table">
+    <thead>
+      <tr><th>Video</th><th>Uploaded</th><th>Shots</th><th>Candidates</th><th>CQTR Score</th><th>Time</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r['filename'] }}</td>
+        <td>{{ r['upload_date'] }}</td>
+        <td>{{ r['num_shots'] }}</td>
+        <td>{{ r['num_candidates'] }}</td>
+        <td>{{ "%.3f"|format(r['cqtr_score']) }}</td>
+        <td>{{ "%.2f"|format(r['processing_time_sec']) }}s</td>
+        <td><a class="btn btn-secondary" href="{{ url_for('result_page', result_id=r['result_id']) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}
