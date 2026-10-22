@@ -11,6 +11,53 @@
   --cyan: #35caff;
 }
 
+[data-theme="obsidian"] {
+  --bg: #05070b;
+  --panel: #0d111a;
+  --border: #1a2336;
+  --muted: #8b9bb4;
+  --text: #f0fdf4;
+  --violet: #10b981;
+  --blue: #059669;
+  --cyan: #34d399;
+}
+
+[data-theme="cyber"] {
+  --bg: #0a0618;
+  --panel: #140d28;
+  --border: #3b236e;
+  --muted: #a79fc2;
+  --text: #fdf4ff;
+  --violet: #d946ef;
+  --blue: #8b5cf6;
+  --cyan: #06b6d4;
+}
+
+[data-theme="steel"] {
+  --bg: #0d1117;
+  --panel: #161c26;
+  --border: #293548;
+  --muted: #94a3b8;
+  --text: #f8fafc;
+  --violet: #38bdf8;
+  --blue: #0284c7;
+  --cyan: #64748b;
+}
+
+[data-layout="compact"] .content {
+  padding: 16px 20px;
+}
+
+[data-layout="compact"] .panel, [data-layout="compact"] .card {
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+[data-layout="compact"] .hero-grid {
+  min-height: 200px;
+  margin-bottom: 16px;
+}
+
 * {
   box-sizing: border-box;
 }

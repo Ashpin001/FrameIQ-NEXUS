@@ -1,25 +1,39 @@
 import React, { useState, useRef } from 'react';
 import { VideoRecord } from '../types';
 import { saveVideo } from '../utils/storage';
+import { VideoPreviewPlayer } from '../components/VideoPreviewPlayer';
 
 interface HomePageProps {
   onStartProcessing: (video: VideoRecord, videoElement?: HTMLVideoElement) => void;
   onNavigate: (view: string, param?: number) => void;
+  onAddBatchFiles: (files: File[]) => void;
+  batchQueueCount: number;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ onStartProcessing, onNavigate }) => {
+export const HomePage: React.FC<HomePageProps> = ({
+  onStartProcessing,
+  onNavigate,
+  onAddBatchFiles,
+  batchQueueCount,
+}) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isUsingSample, setIsUsingSample] = useState(false);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  const [videoMeta, setVideoMeta] = useState<{ duration: number; width: number; height: number } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoPreviewRef = useRef<HTMLVideoElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processSelectedFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      if (e.target.files.length > 1) {
+        onAddBatchFiles(Array.from(e.target.files));
+        onNavigate('batch');
+      } else {
+        processSelectedFile(e.target.files[0]);
+      }
     }
   };
 
@@ -52,8 +66,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartProcessing, onNavigat
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processSelectedFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      if (e.dataTransfer.files.length > 1) {
+        onAddBatchFiles(Array.from(e.dataTransfer.files));
+        onNavigate('batch');
+      } else {
+        processSelectedFile(e.dataTransfer.files[0]);
+      }
     }
   };
 
@@ -80,8 +99,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartProcessing, onNavigat
       return;
     }
 
-    const videoEl = videoPreviewRef.current;
-    const duration = videoEl?.duration || 10;
+    const videoEl = videoElement;
+    const rawDur = videoMeta?.duration ?? videoEl?.duration;
+    const duration = (rawDur && Number.isFinite(rawDur) && rawDur > 0) ? rawDur : 9.5;
     const fps = 30;
     const frameCount = Math.round(duration * fps);
 
@@ -91,8 +111,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartProcessing, onNavigat
       duration_sec: Math.round(duration * 10) / 10,
       fps: fps,
       frame_count: frameCount,
-      width: videoEl?.videoWidth || 1280,
-      height: videoEl?.videoHeight || 720,
+      width: videoMeta?.width || videoEl?.videoWidth || 1280,
+      height: videoMeta?.height || videoEl?.videoHeight || 720,
       upload_date: new Date().toISOString().replace('T', ' ').substring(0, 19),
       videoUrl: previewUrl,
       isSample: false,
@@ -236,19 +256,20 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartProcessing, onNavigat
                 ? 'Click to change or select another file'
                 : 'or click to browse your files'}
             </p>
-            <small>MP4, MOV, AVI, MKV, WEBM · Max 200 MB</small>
+            <small>MP4, MOV, AVI, MKV, WEBM · Max 200 MB · Select single or multiple files</small>
             <input
               type="file"
               ref={fileInputRef}
               id="video-input"
               name="video"
+              multiple
               accept=".mp4,.avi,.mov,.mkv,.webm"
               style={{ display: 'none' }}
               onChange={handleFileChange}
             />
           </div>
 
-          <div style={{ marginTop: '14px', display: 'flex', gap: '10px' }}>
+          <div style={{ marginTop: '14px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button
               type="button"
               className={`btn ghost ${isUsingSample ? 'highlight' : ''}`}
@@ -262,6 +283,35 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartProcessing, onNavigat
             >
               {isUsingSample ? '✓ Preset Demo Selected' : 'Use Instant 7-Scene Demo'}
             </button>
+
+            <button
+              type="button"
+              className="btn ghost"
+              style={{
+                fontSize: '12px',
+                padding: '8px 14px',
+                borderColor: '#6b3fd4',
+                color: '#d8b4fe',
+              }}
+              onClick={() => onNavigate('batch')}
+            >
+              ☷ Batch Queue {batchQueueCount > 0 ? `(${batchQueueCount})` : ''} →
+            </button>
+
+            {selectedFile && (
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ fontSize: '12px', padding: '8px 14px', color: '#c7b0ff' }}
+                onClick={() => {
+                  onAddBatchFiles([selectedFile]);
+                  onNavigate('batch');
+                }}
+              >
+                ＋ Send to Batch Queue
+              </button>
+            )}
+
             {selectedFile && (
               <button
                 type="button"
@@ -305,36 +355,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartProcessing, onNavigat
             <span className="tag">LIVE PREVIEW</span>
           </div>
 
-          {previewUrl ? (
-            <video
-              ref={videoPreviewRef}
-              id="preview"
-              className="video-preview"
-              src={previewUrl}
-              controls
-            />
-          ) : isUsingSample ? (
-            <div
-              className="preview-placeholder"
-              style={{
-                background: 'linear-gradient(135deg, #182344, #121426)',
-                border: '1px solid #3b4266',
-              }}
-            >
-              <div className="preview-play">▶</div>
-              <p style={{ marginTop: '10px', color: '#e0c9ff' }}>
-                Preset Demo Video Ready
-              </p>
-              <small style={{ color: '#8892b0' }}>
-                Multi-scene dynamic video with cuts, lighting shifts & subjects
-              </small>
-            </div>
-          ) : (
-            <div className="preview-placeholder" id="preview-placeholder">
-              <div className="preview-play">▶</div>
-              <p>Your video preview will appear here</p>
-            </div>
-          )}
+          <VideoPreviewPlayer
+            previewUrl={previewUrl}
+            isUsingSample={isUsingSample}
+            onVideoElementReady={(el) => setVideoElement(el)}
+            onMetadataLoaded={(meta) => setVideoMeta(meta)}
+          />
 
           <div className="video-facts">
             <span>◉ Scene detection</span>
