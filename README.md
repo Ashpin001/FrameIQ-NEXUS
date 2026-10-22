@@ -1,132 +1,57 @@
-# Intelligent Video Thumbnail Generation
-### Using Shot Boundary Detection, Key Frame Selection and Content-Aware Quality Ranking (CQTR)
+# FrameIQ AI & NEXUS
 
-A final-year CSE project: a lightweight, explainable, locally-run web application
-that automatically selects a high-quality, representative thumbnail from an
-uploaded video — instead of grabbing a random or middle frame.
+### Intelligent Video Thumbnail Generation with Shot Detection, CQTR Ranking & NEXUS 3D Spatial AI Lab
+
+A modern React application ported from Flask/Python to a high-performance web platform running on Node.js and Vite. It automatically selects high-quality, representative thumbnails from uploaded or sample videos using classical computer vision principles and multi-objective ranking.
 
 ---
 
 ## 1. What This Project Does
 
-Given an uploaded video, the system:
+Given an uploaded or demo video, the system:
 
-1. Detects shot (scene) boundaries using adaptive frame-difference thresholding.
-2. Extracts a small set of candidate key frames per shot.
-3. Scores every candidate on visual quality, content importance, and scene
-   representativeness.
-4. Combines these into a single **CQTR score** and selects the best-ranked frame.
-5. Compares the result against five baseline selection strategies and runs an
-   ablation study showing each component's contribution.
-
-Everything runs **locally** with OpenCV/NumPy/scikit-image — no external APIs,
-no paid services, no cloud GPU required.
+1. **Video Preprocessing & Sampling**: Samples video frames evenly across time while extracting native resolution and playback metadata.
+2. **Shot Boundary Detection**: Segments the video into distinct visual scenes using combined grayscale pixel differences and histogram correlation differences with an adaptive threshold ($T = \mu + 2.5\sigma$).
+3. **Keyframe Extraction & De-duplication**: Extracts candidates from the stable interior of each shot (ignoring transition edge frames), and filters near-duplicates using histogram correlation ($r \ge 0.97$).
+4. **Content-Aware Quality Ranking (CQTR)**: Evaluates sharpness (Laplacian variance), brightness exposure, contrast, color quality, saliency, and scene representativeness.
+5. **Research Baselines & Ablation Study**: Compares against 5 baseline selection strategies (Random, Uniform Sampling, Middle Frame, Sharpness-Based, Proposed CQTR) and 6 ablation configurations.
+6. **FrameIQ Creative Studio**: Allows in-browser thumbnail editing (cropping to 16:9, 1:1, or 9:16, contrast/brightness adjustments, gradient and dark overlays, wrapped typography, and JPEG export) along with semantic AI reranking.
+7. **FrameIQ NEXUS 3D Spatial AI Lab**: Provides an interactive Three.js 3D WebGL frame constellation with orbit, zoom, raycaster selection, and visual-temporal Maximal Marginal Relevance (MMR) ranking.
+8. **Persistent History**: Keeps records of processed videos and human evaluation ratings in browser storage.
 
 ---
 
-## 2. Requirements
+## 2. CQTR Scoring Formula
 
-- Windows 10/11 (also works on macOS/Linux)
-- Python 3.9 – 3.12
-- ~200MB free disk space for dependencies
+```text
+CQTR(F) = 0.20 * S(F) + 0.10 * B(F) + 0.10 * C(F) + 0.10 * Col(F)
+          + 0.20 * SR(F) + 0.25 * CI(F) - 0.05 * R(F)
+```
+
+- **Sharpness ($S$)**: Laplacian variance, normalized $[0, 500] \to [0, 1]$.
+- **Brightness ($B$)**: Mean luminance, ideal band $[60, 200]$.
+- **Contrast ($C$)**: Standard deviation of luminance, normalized $[0, 80] \to [0, 1]$.
+- **Color Quality ($Col$)**: Mean saturation in HSV space, ideal band $[40, 200]$.
+- **Scene Representativeness ($SR$)**: Color-histogram correlation with all sampled frames in the parent shot.
+- **Content Importance ($CI$)**: Edge density, gradient saliency proxy, and central-composition prominence ratio.
+- **Redundancy Penalty ($R$)**: Max pairwise color histogram correlation against other candidate frames in the pool.
 
 ---
 
-## 3. Installation (Windows)
+## 3. Technology Stack
 
-Open **Command Prompt** or **PowerShell** in the project folder:
-
-```
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-If `pip` complains about permissions, try:
-```
-pip install -r requirements.txt --user
-```
+- **Frontend**: React 19, TypeScript, Vite
+- **3D Graphics**: Three.js WebGL (with HTML5 Canvas fallback)
+- **Styling**: Responsive dark glassmorphism design with DM Sans, Inter, and Outfit typography
+- **Data Persistence**: LocalStorage persistence layer
 
 ---
 
 ## 4. Running the Application
 
-```
-python app.py
-```
-
-Then open your browser at:
-
-```
-http://127.0.0.1:5000
+```bash
+npm install
+npm run dev
 ```
 
-You should see the **AI Video Thumbnail Generator** home page. Upload a video
-(MP4, AVI, MOV, MKV, or WEBM, up to 200MB) and click **Generate Thumbnail**.
-
----
-
-## 5. Project Structure
-
-```
-video-thumbnail-generator/
-├── app.py                     # Flask application (routes, orchestration)
-├── config.py                  # All tunable parameters (weights, thresholds, paths)
-├── db.py                      # SQLite persistence layer
-├── requirements.txt
-├── modules/
-│   ├── video_processor.py     # Video loading, metadata, frame sampling
-│   ├── shot_detector.py       # Adaptive shot boundary detection
-│   ├── keyframe_extractor.py  # Per-shot candidate extraction + de-duplication
-│   ├── frame_quality.py       # Sharpness / brightness / contrast / color
-│   ├── content_analyzer.py    # Edge density / saliency / centrality / faces
-│   ├── scene_representativeness.py
-│   ├── thumbnail_selector.py  # CQTR aggregation + ranking
-│   ├── baseline_methods.py    # 5 baseline strategies for comparison
-│   ├── evaluator.py           # Full pipeline runner + ablation + metrics
-│   └── visualizer.py          # Matplotlib comparison / ablation / breakdown charts
-├── templates/                 # Flask/Jinja2 HTML templates
-├── static/                    # CSS + JS
-├── uploads/ outputs/ candidates/ results/ evaluation/  # Runtime data (created automatically)
-├── dataset/metadata.csv       # Dataset metadata template
-└── research/                  # Methodology, innovation, evaluation & ablation docs,
-                                # presentation content, viva Q&A
-```
-
----
-
-## 6. How the CQTR Score Is Computed
-
-```
-CQTR(F) = Ws*S(F) + Wb*B(F) + Wc*C(F) + Wcol*Col(F)
-          + Wsr*SR(F) + Wci*CI(F) - Wr*R(F)
-```
-
-All feature scores are normalized to [0, 1]. Weights live in `config.py`
-(`CQTR_WEIGHTS`) and can be changed for experimentation — they are **not**
-claimed to be scientifically optimal, only a reasonable starting scheme
-(see `research/methodology.md`).
-
----
-
-## 7. Known Limitations
-
-See `research/methodology.md` (Limitations section) for the full, honest list —
-including threshold sensitivity, difficulty with gradual/complex transitions,
-the subjectivity of "good thumbnail", and that this is a lightweight
-classical-CV approach rather than a deep-learning semantic model.
-
----
-
-## 8. Optional Cloud Deployment
-
-The app runs fine locally with `python app.py`. For cloud deployment
-(Render / Railway / Hugging Face Spaces), you'll additionally need:
-
-- A `Procfile` (e.g. `web: gunicorn app:app`)
-- `gunicorn` added to `requirements.txt`
-- Awareness that free-tier CPU/memory limits may slow down processing of
-  longer or higher-resolution videos — this is a genuine constraint, not
-  something the current codebase works around.
-
-This is optional and not required for demonstrating or evaluating the project.
+The application runs on port 3000 (`http://localhost:3000`).

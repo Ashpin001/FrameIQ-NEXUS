@@ -1,0 +1,8 @@
+{
+  "name": "FrameIQ AI & NEXUS",
+  "description": "Intelligent Video Thumbnail Generator with Shot Boundary Detection, Key Frame Selection, Content-Aware Quality Ranking (CQTR), and NEXUS 3D Spatial AI Lab",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
