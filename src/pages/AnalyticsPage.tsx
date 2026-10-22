@@ -275,19 +275,7 @@ ${customRatings
               Strictly measured results across 5 independent methods. Quality, relevance, and semantics normalized in [0, 1].
             </div>
           </div>
-          <span
-            style={{
-              fontSize: '11px',
-              padding: '3px 8px',
-              background: '#2b1b4b',
-              color: '#d8b4fe',
-              border: '1px solid #7c3aed',
-              borderRadius: '4px',
-              fontWeight: 700,
-            }}
-          >
-            IEEE TRANSACTIONS FORMAT
-          </span>
+          
         </div>
 
         <div style={{ overflowX: 'auto' }}>
