@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { VideoRecord, ProcessingResultRecord, ScoredCandidate } from '../types';
 import { saveEvaluation } from '../utils/storage';
 import { CQTRScoreTimelineChart } from '../components/CQTRScoreTimelineChart';
+import { InfoCard } from '../components/InfoCard';
 
 interface ResultPageProps {
   video: VideoRecord;
@@ -227,6 +228,16 @@ export const ResultPage: React.FC<ResultPageProps> = ({ video, result, onNavigat
             video={video}
             result={result}
             onSelectCandidate={handleTimelineCandidateSelect}
+          />
+
+          <InfoCard
+            title="📹 Video Technical Info"
+            items={[
+              { label: 'Resolution', value: `${video.width} x ${video.height}`, icon: '⧉' },
+              { label: 'Frame Rate', value: `${video.fps} FPS`, icon: '⏲' },
+              { label: 'Duration', value: `${video.duration_sec.toFixed(1)}s`, icon: '⌛' },
+              { label: 'Codec', value: 'Detected (H.264)', icon: '▤' },
+            ]}
           />
 
           {/* Selected Frame Live Preview & Deep Metric Inspection */}

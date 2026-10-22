@@ -1300,3 +1300,19 @@ export function generateSyntheticSampleFrames(
 
   return sampled;
 }
+
+export const generateProceduralSampleFrames = (count = 24): SampledFrame[] =>
+  generateSyntheticSampleFrames(
+    {
+      id: Date.now(),
+      filename: 'sample_video.mp4',
+      duration_sec: 12,
+      fps: 30,
+      frame_count: 360,
+      width: 640,
+      height: 360,
+      upload_date: new Date().toISOString(),
+    },
+    count
+  );
+
